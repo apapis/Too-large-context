@@ -42,13 +42,10 @@ def separate_questions(test_data):
     ai_questions = []
     
     for item in test_data:
-        # Check if item has 'test' field with 'q' and 'a'
         if 'test' in item and isinstance(item['test'], dict):
             if 'q' in item['test'] and 'a' in item['test']:
-                # This is an AI question
                 ai_questions.append(item)
         else:
-            # This is a math question
             math_questions.append(item)
     
     print(f"Found {len(math_questions)} math questions")
@@ -56,22 +53,46 @@ def separate_questions(test_data):
     
     return math_questions, ai_questions
 
-def display_sample_questions(math_questions, ai_questions, sample_size=3):
-    """
-    Displays sample of both types of questions
-    """
-    print("\nSample Math Questions:")
-    for q in math_questions[:sample_size]:
-        print(json.dumps(q, indent=2))
+def validate_math(math_questions):
+    corrected = []
+    corrections = []
     
-    print("\nSample AI Questions:")
-    for q in ai_questions[:sample_size]:
-        print(json.dumps(q, indent=2))
+    for question in math_questions:
+        expression = question['question']
+        given_answer = question['answer']
+        
+        try:
+            num1, num2 = map(int, expression.split('+'))
+            correct_answer = num1 + num2
+            
+            if given_answer != correct_answer:
+                corrections.append({
+                    'expression': expression,
+                    'old': given_answer,
+                    'new': correct_answer
+                })
+                question['answer'] = correct_answer
+            
+            corrected.append(question)
+                
+        except (ValueError, TypeError) as e:
+            corrected.append(question)
+    
+    return corrected, corrections
+
+def print_corrections(corrections):
+    if not corrections:
+        print("\nAll math answers were correct!")
+        return
+        
+    print(f"\nFound {len(corrections)} incorrect answers:")
+    for c in corrections:
+        print(f"{c['expression']}: {c['old']} -> {c['new']}")
 
 if __name__ == "__main__":
     test_data = load_file()
     
     if test_data:
         math_questions, ai_questions = separate_questions(test_data)
-        
-        display_sample_questions(math_questions, ai_questions)
+        corrected_math, corrections = validate_math(math_questions)
+        print_corrections(corrections)
