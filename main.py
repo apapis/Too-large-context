@@ -37,18 +37,41 @@ def load_file():
         print(f"Error while parsing JSON: {e}")
         return None
 
-def display_test_data(test_data, limit=100):
-    if not test_data:
-        return
-        
-    print(f"\nFirst {limit} elements from test-data:")
-    for i, item in enumerate(test_data[:limit]):
-        print(json.dumps(item, indent=2, ensure_ascii=False))
+def separate_questions(test_data):
+    math_questions = []
+    ai_questions = []
     
-    print(f"\nTotal number of test elements found: {len(test_data)}")
+    for item in test_data:
+        # Check if item has 'test' field with 'q' and 'a'
+        if 'test' in item and isinstance(item['test'], dict):
+            if 'q' in item['test'] and 'a' in item['test']:
+                # This is an AI question
+                ai_questions.append(item)
+        else:
+            # This is a math question
+            math_questions.append(item)
+    
+    print(f"Found {len(math_questions)} math questions")
+    print(f"Found {len(ai_questions)} AI questions")
+    
+    return math_questions, ai_questions
+
+def display_sample_questions(math_questions, ai_questions, sample_size=3):
+    """
+    Displays sample of both types of questions
+    """
+    print("\nSample Math Questions:")
+    for q in math_questions[:sample_size]:
+        print(json.dumps(q, indent=2))
+    
+    print("\nSample AI Questions:")
+    for q in ai_questions[:sample_size]:
+        print(json.dumps(q, indent=2))
 
 if __name__ == "__main__":
     test_data = load_file()
     
     if test_data:
-        display_test_data(test_data)
+        math_questions, ai_questions = separate_questions(test_data)
+        
+        display_sample_questions(math_questions, ai_questions)
